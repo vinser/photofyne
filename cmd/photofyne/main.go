@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,8 +17,8 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/barasher/go-exiftool"
 	"github.com/disintegration/imaging"
+	exif "github.com/dsoprea/go-jpeg-image-structure/v2"
 )
 
 var wMain fyne.Window
@@ -133,12 +132,12 @@ func NewPhotoList(folder string) PhotoList {
 		log.Fatalf("Can't list photo files from folder \"%s\". Error: %v\n", folder, err)
 	}
 	photos := []*Photo(nil)
-	et, err := exiftool.NewExiftool()
-	if err != nil {
-		// TODO: work without exiftool installed. Only file modify date
-		log.Fatalf("Error when intializing: %v\n", err)
-	}
-	defer et.Close()
+	// et, err := exiftool.NewExiftool()
+	// if err != nil {
+	// 	// TODO: work without exiftool installed. Only file modify date
+	// 	log.Fatalf("Error when intializing: %v\n", err)
+	// }
+	// defer et.Close()
 
 	for _, f := range files {
 		if isPhotoFile(f.Name()) {
@@ -148,7 +147,8 @@ func NewPhotoList(folder string) PhotoList {
 				DateChoice: NoChoice,
 				Dates:      [3]string{},
 			}
-			photo.Dates[ChoiceExifCreateDate] = photo.exifDate(et)
+			// photo.Dates[ChoiceExifCreateDate] = photo.exifDate(et)
+			photo.Dates[ChoiceExifCreateDate] = photo.exifDate()
 			photo.Dates[ChoiceFileModifyDate] = photo.modifyDate()
 
 			photos = append(photos, photo)
@@ -538,23 +538,6 @@ func (p *Photo) img(scale int) (img *canvas.Image) {
 	return
 }
 
-// get EXIF and file dates
-func (p *Photo) dates() [3]string {
-	ret := [3]string{}
-
-	ret[ChoiceFileModifyDate] = p.modifyDate()
-
-	et, err := exiftool.NewExiftool()
-	if err != nil {
-		fmt.Printf("Error when intializing: %v\n", err)
-		return ret
-	}
-	defer et.Close()
-
-	ret[ChoiceExifCreateDate] = p.exifDate(et)
-	return ret
-}
-
 // get file modify date string
 func (p *Photo) modifyDate() string {
 	fi, err := os.Stat(p.File)
@@ -565,22 +548,31 @@ func (p *Photo) modifyDate() string {
 	return fileModifyDate.Format(DateFormat)
 }
 
-// get EXIF date string
-func (p *Photo) exifDate(et *exiftool.Exiftool) string {
-	metadata := et.ExtractMetadata(p.File)[0]
-	if metadata.Err != nil {
+// update EXIF and file dates
+func (p *Photo) exifDate() string {
+	// Parse the image.
+
+	jmp := exif.NewJpegMediaParser()
+
+	intfc, err := jmp.ParseFile(p.File)
+	if err != nil {
 		return ""
 	}
-	date, err := metadata.GetString("DateTimeOriginal")
+
+	sl := intfc.(*exif.SegmentList)
+	_, _, exifTags, err := sl.DumpExif()
 	if err != nil {
-		date, err = metadata.GetString("CreateDate")
-		if err != nil {
-			return ""
+		return ""
+	}
+
+	for _, et := range exifTags {
+		if et.IfdPath == "IFD/Exif" && (et.TagName == "DateTimeOriginal" || et.TagName == "DateTimeDigitized") {
+			return et.FormattedFirst
 		}
 	}
-	return date
+	return ""
 }
 
-// update EXIF and file dates
+// update EXIF dates
 func (p *Photo) updateExif() {
 }
