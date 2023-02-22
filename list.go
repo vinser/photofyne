@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -38,7 +39,7 @@ type PhotoList struct {
 }
 
 // create new PhotoList object for the folder
-func NewPhotoList(folder string) PhotoList {
+func newPhotoList(folder string) PhotoList {
 	folder, _ = filepath.Abs(folder)
 	files, err := os.ReadDir(folder)
 	if err != nil {
@@ -46,7 +47,8 @@ func NewPhotoList(folder string) PhotoList {
 	}
 	photos := []*Photo(nil)
 	for _, f := range files {
-		if isPhotoFile(f.Name()) {
+		fName := strings.ToLower(f.Name())
+		if strings.HasSuffix(fName, ".jpg") || strings.HasSuffix(fName, ".jpeg") {
 			photo := &Photo{
 				File:       filepath.Join(folder, f.Name()),
 				Drop:       false,
@@ -88,7 +90,7 @@ func NewPhotoList(folder string) PhotoList {
 // Save choosed photos:
 // 1. move dropped photo to droppped folder
 // 2. update exif dates with file modify date or input date
-func (l *PhotoList) SaveList() {
+func (l *PhotoList) savePhotoList() {
 	dialog.ShowConfirm("Ready to save changes", "Proceed?",
 		func(b bool) {
 			if b {
@@ -125,15 +127,13 @@ func (l *PhotoList) SaveList() {
 }
 
 // create new photos tab container
-func (l *PhotoList) NewListTab() *container.TabItem {
+func (l *PhotoList) newListTab() *container.TabItem {
 	toolBar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.FolderOpenIcon(), ChooseFolder),
-		widget.NewToolbarAction(theme.DocumentSaveIcon(), l.SaveList),
+		widget.NewToolbarAction(theme.FolderOpenIcon(), chooseFolder),
+		widget.NewToolbarAction(theme.DocumentSaveIcon(), l.savePhotoList),
 		widget.NewToolbarSpacer(),
-		widget.NewToolbarAction(theme.VisibilityIcon(), SwitchTheme),
-		// widget.NewToolbarAction(theme.HelpIcon(), func() {
-		// 	log.Println("Display help")
-		// }),
+		widget.NewToolbarAction(theme.SettingsIcon(), settingsScreen),
+		widget.NewToolbarAction(theme.HelpIcon(), aboutScreen),
 	)
 	listTitle := []string{"File Name", "Exif Date", "File Date", "Entry Date", "Dropped"}
 	list := widget.NewTable(
@@ -184,7 +184,7 @@ func (l *PhotoList) NewListTab() *container.TabItem {
 }
 
 // create new photos tab container
-func (l *PhotoList) NewChoiceTab() *container.TabItem {
+func (l *PhotoList) newChoiceTab() *container.TabItem {
 	toolBar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.ContentRemoveIcon(), func() {
 			l.resizeFrame(RemoveColumn)
@@ -332,7 +332,38 @@ func (l *PhotoList) initFrame() {
 	*l = s
 }
 
-// detect whether file name is jpeg photo image
-func isPhotoFile(filename string) bool {
-	return strings.HasSuffix(strings.ToLower(filename), ".jpg") || strings.HasSuffix(strings.ToLower(filename), ".jpeg")
+// switch theme light-dark
+func switchTheme() {
+	p := fyne.CurrentApp().Preferences()
+	switch p.StringWithFallback("theme", "LightTheme") {
+	case "LightTheme":
+		p.SetString("theme", "DarkTheme")
+	case "DarkTheme":
+		p.SetString("theme", "LightTheme")
+	}
+}
+
+// open photo folder dialog
+func chooseFolder() {
+	folder := ""
+
+	fd := dialog.NewFolderOpen(func(list fyne.ListableURI, err error) {
+		if err != nil {
+			dialog.ShowError(err, wMain)
+			return
+		}
+		if list == nil {
+			wMain.Close()
+			return
+		}
+		folder = list.Path()
+		fyne.CurrentApp().Preferences().SetString("folder", folder)
+		MainLayout(folder)
+	}, wMain)
+	wd, _ := os.Getwd()
+	savedLocation := fyne.CurrentApp().Preferences().StringWithFallback("folder", wd)
+	locationUri, _ := storage.ListerForURI(storage.NewFileURI(savedLocation))
+	fd.SetLocation(locationUri)
+	fd.Resize(fyne.NewSize(672, 378))
+	fd.Show()
 }
