@@ -19,6 +19,7 @@ func parseURL(urlStr string) *url.URL {
 	return link
 }
 
+// show info about app
 func aboutScreen() {
 	hlPhotofyne := parseURL("https://github.com/vinser/photofyne")
 	c := container.NewCenter(container.NewVBox(

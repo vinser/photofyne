@@ -9,6 +9,7 @@ import (
 	"github.com/tajtiattila/metadata/exif"
 )
 
+// get EXIF metadata from file
 func getJpegExif(fileName string) (*exif.Exif, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -23,7 +24,7 @@ func getJpegExif(fileName string) (*exif.Exif, error) {
 	return fileExif, nil
 }
 
-// get EXIF date
+// get EXIF date from file
 func getExifDate(file string) string {
 	fileExif, err := getJpegExif(file)
 	if err != nil {
@@ -36,7 +37,7 @@ func getExifDate(file string) string {
 	return exifTime.Format(DateFormat)
 }
 
-// update EXIF dates
+// update EXIF dates in file
 func updateExifDate(file, backupDirName, date string) error {
 	newDate, err := time.Parse(DateFormat, date)
 	if err != nil {

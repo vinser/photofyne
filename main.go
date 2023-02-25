@@ -16,6 +16,8 @@ var version, buildTime, target, goversion string
 
 var wMain fyne.Window
 
+var pl *PhotoList
+
 func main() {
 	a := app.NewWithID("com.github/vinser/photofine")
 	t := &AppTheme{}
@@ -27,14 +29,15 @@ func main() {
 	wMain.CenterOnScreen()
 
 	wd, _ := os.Getwd()
-	MainLayout(a.Preferences().StringWithFallback("folder", wd))
+	pl = newPhotoList(a.Preferences().StringWithFallback("folder", wd))
+	MainLayout(pl)
+	wMain.SetMaster()
 	wMain.Show()
 	a.Run()
 }
 
 // make main window layout
-func MainLayout(folder string) {
-	pl := newPhotoList(folder)
+func MainLayout(pl *PhotoList) {
 
 	contentTabs := container.NewAppTabs(pl.newChoiceTab(), pl.newListTab())
 	contentTabs.SetTabLocation(container.TabLocationBottom)

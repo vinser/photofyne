@@ -39,7 +39,7 @@ type PhotoList struct {
 }
 
 // create new PhotoList object for the folder
-func newPhotoList(folder string) PhotoList {
+func newPhotoList(folder string) *PhotoList {
 	folder, _ = filepath.Abs(folder)
 	files, err := os.ReadDir(folder)
 	if err != nil {
@@ -84,7 +84,7 @@ func newPhotoList(folder string) PhotoList {
 		// photoList.Frame.Add(vBox)
 	}
 
-	return photoList
+	return &photoList
 }
 
 // Save choosed photos:
@@ -225,81 +225,78 @@ func (l *PhotoList) newChoiceTab() *container.TabItem {
 
 // scroll frame at position pos
 func (l *PhotoList) scrollFrame(pos int) {
-	s := *l
 
 	switch {
 	case pos < 0:
 		pos = 0
-	case pos > len(s.List)-s.FrameSize:
-		pos = len(s.List) - s.FrameSize
+	case pos > len(l.List)-l.FrameSize:
+		pos = len(l.List) - l.FrameSize
 	}
 
 	switch {
-	case pos-s.FramePos >= s.FrameSize || s.FramePos-pos >= s.FrameSize:
-		for i := s.FramePos; i < s.FramePos+s.FrameSize; i++ {
-			s.List[i].Img = nil
+	case pos-l.FramePos >= l.FrameSize || l.FramePos-pos >= l.FrameSize:
+		for i := l.FramePos; i < l.FramePos+l.FrameSize; i++ {
+			l.List[i].Img = nil
 		}
-		for i := pos; i < pos+s.FrameSize; i++ {
-			s.List[i].Img = s.List[i].img(s.FrameSize)
-			if s.List[i].Drop {
-				s.List[i].Img.Translucency = 0.5
+		for i := pos; i < pos+l.FrameSize; i++ {
+			l.List[i].Img = l.List[i].img(l.FrameSize)
+			if l.List[i].Drop {
+				l.List[i].Img.Translucency = 0.5
 			}
 		}
-	case pos > s.FramePos:
-		for i := s.FramePos; i < pos; i++ {
-			s.List[i].Img = nil
-			s.List[i+s.FrameSize].Img = s.List[i+s.FrameSize].img(s.FrameSize)
-			if s.List[i+s.FrameSize].Drop {
-				s.List[i+s.FrameSize].Img.Translucency = 0.5
+	case pos > l.FramePos:
+		for i := l.FramePos; i < pos; i++ {
+			l.List[i].Img = nil
+			l.List[i+l.FrameSize].Img = l.List[i+l.FrameSize].img(l.FrameSize)
+			if l.List[i+l.FrameSize].Drop {
+				l.List[i+l.FrameSize].Img.Translucency = 0.5
 			}
 		}
-	case s.FramePos > pos:
-		for i := pos; i < s.FramePos; i++ {
-			s.List[i+s.FrameSize].Img = nil
-			s.List[i].Img = s.List[i].img(s.FrameSize)
-			if s.List[i].Drop {
-				s.List[i].Img.Translucency = 0.5
+	case l.FramePos > pos:
+		for i := pos; i < l.FramePos; i++ {
+			l.List[i+l.FrameSize].Img = nil
+			l.List[i].Img = l.List[i].img(l.FrameSize)
+			if l.List[i].Drop {
+				l.List[i].Img.Translucency = 0.5
 			}
 		}
 	}
 
 	// TODO: may be optimized when for scroll les than frame size by not all objects deletion/addition? Somwthing like this:
 	// https://stackoverflow.com/questions/63995289/how-to-remove-objects-from-golang-fyne-container
-	s.Frame.RemoveAll()
+	l.Frame.RemoveAll()
 	for i := 0; i < l.FrameSize; i++ {
-		s.Frame.Add(s.List[pos+i].FrameColumn())
+		l.Frame.Add(l.List[pos+i].FrameColumn())
 	}
-	s.Frame.Refresh()
+	l.Frame.Refresh()
 
-	s.FramePos = pos
-	*l = s
+	l.FramePos = pos
 }
 
 // resize frame
 func (l *PhotoList) resizeFrame(zoom int) {
-	s := *l
 
 	switch zoom {
 	case RemoveColumn:
-		if s.FrameSize-1 < MinFrameSize {
+		if l.FrameSize-1 < MinFrameSize {
 			return
 		}
-		s.List[s.FramePos+s.FrameSize-1].Img = nil
-		s.FrameSize--
+		l.List[l.FramePos+l.FrameSize-1].Img = nil
+		l.FrameSize--
 	case AddColumn:
-		if s.FrameSize+1 > MaxFrameSize || s.FrameSize+1 > len(s.List) {
+		if l.FrameSize+1 > MaxFrameSize || l.FrameSize+1 > len(l.List) {
 			return
 		}
-		i := s.FramePos + s.FrameSize
-		if i == len(s.List) {
-			s.FramePos--
-			i = s.FramePos
+		i := l.FramePos + l.FrameSize
+		if i == len(l.List) {
+			l.FramePos--
+			i = l.FramePos
 		}
-		s.List[i].Img = s.List[i].img(s.FrameSize)
-		if s.List[i].Drop {
-			s.List[i].Img.Translucency = 0.5
+		l.List[i].Img = l.List[i].img(l.FrameSize)
+		if l.List[i].Drop {
+			l.List[i].Img.Translucency = 0.5
 		}
-		s.FrameSize++
+		l.FrameSize++
 	}
 	//      0-1-2-3-4-5-6-7-8
 	//          2-3-4			p=2, s=3
@@ -308,38 +305,24 @@ func (l *PhotoList) resizeFrame(zoom int) {
 
 	// TODO: may be optimized when for scroll les than frame size by not all objects deletion/addition? Somwthing like this:
 	// https://stackoverflow.com/questions/63995289/how-to-remove-objects-from-golang-fyne-container
-	s.Frame.RemoveAll()
-	for i := 0; i < s.FrameSize; i++ {
-		s.Frame.Add(s.List[s.FramePos+i].FrameColumn())
+	l.Frame.RemoveAll()
+	for i := 0; i < l.FrameSize; i++ {
+		l.Frame.Add(l.List[l.FramePos+i].FrameColumn())
 	}
-	s.Frame.Layout = layout.NewAdaptiveGridLayout(len(s.Frame.Objects))
-	s.Frame.Refresh()
+	l.Frame.Layout = layout.NewAdaptiveGridLayout(len(l.Frame.Objects))
+	l.Frame.Refresh()
 
-	// s.FrameSize = zoom
-	*l = s
+	// l.FrameSize = zoom
 }
 
 // fill frame Num photo images starting with Pos = 0.
 func (l *PhotoList) initFrame() {
-	s := *l
-	s.FramePos = 0
-	if s.FrameSize > len(s.List) {
-		s.FrameSize = len(s.List)
+	l.FramePos = 0
+	if l.FrameSize > len(l.List) {
+		l.FrameSize = len(l.List)
 	}
-	for i := s.FramePos; i < s.FramePos+s.FrameSize && i < len(s.List); i++ {
-		s.List[i].Img = s.List[i].img(s.FrameSize)
-	}
-	*l = s
-}
-
-// switch theme light-dark
-func switchTheme() {
-	p := fyne.CurrentApp().Preferences()
-	switch p.StringWithFallback("theme", "LightTheme") {
-	case "LightTheme":
-		p.SetString("theme", "DarkTheme")
-	case "DarkTheme":
-		p.SetString("theme", "LightTheme")
+	for i := l.FramePos; i < l.FramePos+l.FrameSize && i < len(l.List); i++ {
+		l.List[i].Img = l.List[i].img(l.FrameSize)
 	}
 }
 
@@ -358,7 +341,8 @@ func chooseFolder() {
 		}
 		folder = list.Path()
 		fyne.CurrentApp().Preferences().SetString("folder", folder)
-		MainLayout(folder)
+		pl = newPhotoList(folder)
+		MainLayout(pl)
 	}, wMain)
 	wd, _ := os.Getwd()
 	savedLocation := fyne.CurrentApp().Preferences().StringWithFallback("folder", wd)
