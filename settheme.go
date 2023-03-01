@@ -10,7 +10,7 @@ const (
 	systemThemeName = "system"
 )
 
-func (s *Settings) makeThemes() *widget.RadioGroup {
+func (s *Settings) themesRow() *widget.RadioGroup {
 	def := s.fyneSettings.ThemeName
 	themeNames := []string{"dark", "light"}
 	if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
@@ -30,4 +30,5 @@ func (s *Settings) chooseTheme(name string) {
 		name = ""
 	}
 	s.fyneSettings.ThemeName = name
+	s.applySettings()
 }

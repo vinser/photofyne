@@ -3,6 +3,7 @@ package main
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -39,9 +40,10 @@ func (s *Settings) chooseScale(value float32) {
 
 		scale.button.Refresh()
 	}
+	s.applySettings()
 }
 
-func (s *Settings) makeScaleButtons() []fyne.CanvasObject {
+func (s *Settings) scalesRow() *fyne.Container {
 	var buttons = make([]fyne.CanvasObject, len(scales))
 	for i, scale := range scales {
 		value := scale.scale
@@ -55,11 +57,10 @@ func (s *Settings) makeScaleButtons() []fyne.CanvasObject {
 		scale.button = button
 		buttons[i] = button
 	}
-
-	return buttons
+	return container.NewGridWithColumns(len(scales), buttons...)
 }
 
-func (s *Settings) makeScalePreviews(value float32) []fyne.CanvasObject {
+func (s *Settings) scalePreviewsRow(value float32) *fyne.Container {
 	var previews = make([]fyne.CanvasObject, len(scales))
 	for i, scale := range scales {
 		text := canvas.NewText("A", theme.ForegroundColor())
@@ -69,6 +70,5 @@ func (s *Settings) makeScalePreviews(value float32) []fyne.CanvasObject {
 		scale.preview = text
 		previews[i] = text
 	}
-
-	return previews
+	return container.NewGridWithColumns(len(scales), previews...)
 }

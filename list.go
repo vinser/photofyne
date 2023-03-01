@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"image/color"
 	"io/fs"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
@@ -64,27 +66,37 @@ func newPhotoList(folder string) *PhotoList {
 			photos = append(photos, photo)
 		}
 	}
-	colrows := InitFrameSize
+	columns := InitFrameSize
 	if InitFrameSize > len(photos) {
-		colrows = len(photos)
+		columns = len(photos)
 	}
 	photoList := PhotoList{
 		Folder:    folder,
 		List:      photos,
-		Frame:     container.NewAdaptiveGrid(colrows),
+		Frame:     container.NewGridWithColumns(columns),
 		FrameSize: InitFrameSize,
 		FramePos:  InitListPos,
 	}
 	photoList.initFrame()
 
+	if columns == 0 { // Workaround for NewGridWithColumns(0) main window shrink on Windows OS
+		photoList.Frame = container.NewGridWithColumns(1, canvas.NewText("", color.Black))
+	}
 	for i := 0; i < photoList.FrameSize && i < len(photoList.List); i++ {
 		photoList.Frame.Add(photoList.List[InitListPos+i].FrameColumn())
-		// photo := photoList.List[InitPos+i]
-		// vBox := container.New(layout.NewMaxLayout(), imgButton(photo), dateCheck(photo))
-		// photoList.Frame.Add(vBox)
 	}
 
 	return &photoList
+}
+
+// make main window layout
+func MainLayout(pl *PhotoList) {
+
+	contentTabs := container.NewAppTabs(pl.newChoiceTab(), pl.newListTab())
+	contentTabs.SetTabLocation(container.TabLocationBottom)
+
+	// wMain.SetContent(container.NewBorder(nil, nil, nil, nil, contentTabs))
+	wMain.SetContent(contentTabs)
 }
 
 // Save choosed photos:
@@ -309,10 +321,8 @@ func (l *PhotoList) resizeFrame(zoom int) {
 	for i := 0; i < l.FrameSize; i++ {
 		l.Frame.Add(l.List[l.FramePos+i].FrameColumn())
 	}
-	l.Frame.Layout = layout.NewAdaptiveGridLayout(len(l.Frame.Objects))
+	l.Frame.Layout = layout.NewGridLayoutWithColumns(len(l.Frame.Objects))
 	l.Frame.Refresh()
-
-	// l.FrameSize = zoom
 }
 
 // fill frame Num photo images starting with Pos = 0.

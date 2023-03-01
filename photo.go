@@ -114,12 +114,13 @@ func (p *Photo) img(scale int) (img *canvas.Image) {
 	}
 	if scale > 1 {
 		width := (m.Bounds().Max.X - m.Bounds().Min.X) / scale
-		m = imaging.Resize(m, width, 0, imaging.Lanczos)
+		// m = imaging.Resize(m, width, 0, imaging.Lanczos)
+		m = imaging.Resize(m, width, 0, imaging.CatmullRom)
 	}
 	img = canvas.NewImageFromImage(m)
 	img.FillMode = canvas.ImageFillContain
-	img.ScaleMode = canvas.ImageScalePixels
-	// img.ScaleMode = canvas.ImageScaleFastest
+	// img.ScaleMode = canvas.ImageScalePixels
+	img.ScaleMode = canvas.ImageScaleFastest
 	return
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 )
 
@@ -25,24 +24,15 @@ func main() {
 	a.Settings().SetTheme(t)
 
 	wMain = a.NewWindow("Photos")
-	wMain.Resize(fyne.NewSize(1344, 756))
-	wMain.CenterOnScreen()
 
 	wd, _ := os.Getwd()
 	pl = newPhotoList(a.Preferences().StringWithFallback("folder", wd))
 	MainLayout(pl)
+	wMain.Resize(fyne.NewSize(1344, 756))
+	wMain.CenterOnScreen()
 	wMain.SetMaster()
 	wMain.Show()
 	a.Run()
-}
-
-// make main window layout
-func MainLayout(pl *PhotoList) {
-
-	contentTabs := container.NewAppTabs(pl.newChoiceTab(), pl.newListTab())
-	contentTabs.SetTabLocation(container.TabLocationBottom)
-
-	wMain.SetContent(container.NewBorder(nil, nil, nil, nil, contentTabs))
 }
 
 // Application custom theme and interface inplementation
