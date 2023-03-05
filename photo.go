@@ -14,16 +14,16 @@ import (
 
 // File date choices
 const (
-	ChoiceExifCreateDate = iota
-	ChoiceFileModifyDate
-	ChoiceManualInputDate
+	ChoiceExifDate = iota
+	ChoiceFileDate
+	ChoiceEnteredDate
 )
 const DateFormat = "2006:01:02 03:04:05"
 
 // Photo
 type Photo struct {
 	File       string
-	Drop       bool
+	Droped     bool
 	Img        *canvas.Image
 	Dates      [3]string
 	DateChoice int
@@ -42,18 +42,18 @@ func (p *Photo) imgButton() *fyne.Container {
 	btn = widget.NewButton(
 		"",
 		func() {
-			if p.Drop {
+			if p.Droped {
 				btn.SetText("")
 				p.Img.Translucency = 0
-				p.Drop = false
+				p.Droped = false
 			} else {
 				btn.SetText("DROPPED")
 				p.Img.Translucency = 0.5
-				p.Drop = true
+				p.Droped = true
 			}
 		},
 	)
-	if p.Drop {
+	if p.Droped {
 		btn.SetText("DROPPED")
 		p.Img.Translucency = 0.5
 	}
@@ -73,30 +73,30 @@ func (p *Photo) dateInput() *fyne.Container {
 		func(s string) {
 			switch s {
 			case "EXIF":
-				p.Dates[ChoiceManualInputDate] = ""
-				p.DateChoice = ChoiceExifCreateDate
+				p.Dates[ChoiceEnteredDate] = ""
+				p.DateChoice = ChoiceExifDate
 				eDate.SetText(p.Dates[p.DateChoice])
 				eDate.Disable()
 			case "File":
-				p.Dates[ChoiceManualInputDate] = ""
-				p.DateChoice = ChoiceFileModifyDate
+				p.Dates[ChoiceEnteredDate] = ""
+				p.DateChoice = ChoiceFileDate
 				eDate.SetText(p.Dates[p.DateChoice])
 				eDate.Disable()
 			case "Input":
-				p.DateChoice = ChoiceManualInputDate
+				p.DateChoice = ChoiceEnteredDate
 				if p.Dates[p.DateChoice] == "" {
-					p.Dates[p.DateChoice] = p.Dates[ChoiceExifCreateDate]
+					p.Dates[p.DateChoice] = p.Dates[ChoiceExifDate]
 				}
 				eDate.SetText(p.Dates[p.DateChoice])
 				eDate.Enable()
 			}
 		})
 	switch p.DateChoice {
-	case ChoiceExifCreateDate:
+	case ChoiceExifDate:
 		rgDateChoice.SetSelected("EXIF")
-	case ChoiceFileModifyDate:
+	case ChoiceFileDate:
 		rgDateChoice.SetSelected("File")
-	case ChoiceManualInputDate:
+	case ChoiceEnteredDate:
 		rgDateChoice.SetSelected("Input")
 	}
 	rgDateChoice.Horizontal = true

@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"image/color"
 	_ "image/jpeg"
@@ -19,11 +21,11 @@ var pl *PhotoList
 
 func main() {
 	a := app.NewWithID("com.github/vinser/photofine")
-	t := &AppTheme{}
+	t := &Theme{}
 
 	a.Settings().SetTheme(t)
 
-	wMain = a.NewWindow("Photos")
+	wMain = a.NewWindow(strings.TrimSuffix(filepath.Base(os.Args[0]), filepath.Ext(os.Args[0])))
 
 	wd, _ := os.Getwd()
 	pl = newPhotoList(a.Preferences().StringWithFallback("folder", wd))
@@ -36,9 +38,9 @@ func main() {
 }
 
 // Application custom theme and interface inplementation
-type AppTheme struct{}
+type Theme struct{}
 
-func (t AppTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+func (t *Theme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameButton:
 		return color.Transparent
@@ -46,14 +48,29 @@ func (t AppTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) col
 	return theme.DefaultTheme().Color(name, variant)
 }
 
-func (t AppTheme) Font(style fyne.TextStyle) fyne.Resource {
-	return theme.DefaultTheme().Font(style)
+func (t *Theme) Font(style fyne.TextStyle) fyne.Resource {
+	if style.Monospace {
+		return regular
+	}
+	if style.Bold {
+		if style.Italic {
+			return bolditalic
+		}
+		return bold
+	}
+	if style.Italic {
+		return italic
+	}
+	if style.Symbol {
+		return regular
+	}
+	return regular
 }
 
-func (t AppTheme) Icon(name fyne.ThemeIconName) fyne.Resource {
+func (t *Theme) Icon(name fyne.ThemeIconName) fyne.Resource {
 	return theme.DefaultTheme().Icon(name)
 }
 
-func (t AppTheme) Size(name fyne.ThemeSizeName) float32 {
+func (t *Theme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
